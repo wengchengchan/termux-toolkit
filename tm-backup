@@ -111,6 +111,19 @@ do_backup() {
         fi
     }
 
+    _pack_ext() {
+        # 打包 TERMUX_HOME 以外的絕對路徑
+        local label="$1" base="$2" dir="$3" out="$4"
+        echo -ne "  打包 ${label}... "
+        if [ -e "$base/$dir" ]; then
+            tar czf "$DEST/$out" -C "$base" "$dir" 2>/dev/null
+            ok "完成 ($(du -sh "$DEST/$out" 2>/dev/null | cut -f1))"
+        else
+            warn "不存在，跳過"
+            ((ERRORS++))
+        fi
+    }
+
     # ── 必備項目 ─────────────────────────────────────
     echo -e "\n${BOLD}必備項目：${NC}"
     _pack ".bashrc"    .bashrc       bashrc.tar.gz
@@ -121,8 +134,9 @@ do_backup() {
     # ── 選備項目（full 模式）──────────────────────────
     if [ "$MODE" = "full" ]; then
         echo -e "\n${BOLD}選備項目（full 模式）：${NC}"
-        _pack "bin/"       bin           bin.tar.gz
-        _pack "ClawTeam"   ClawTeam-OpenClaw clawteam.tar.gz 2>/dev/null || true
+        _pack     "bin/"        bin               bin.tar.gz
+        _pack     "ClawTeam"    ClawTeam-OpenClaw clawteam.tar.gz 2>/dev/null || true
+        _pack_ext "termux-sop"  /sdcard/Download  Termux-sop    termux-sop.tar.gz
     fi
 
     # ── 備份清單 ─────────────────────────────────────
@@ -223,12 +237,26 @@ do_restore() {
         fi
     }
 
-    _unpack "bashrc"    bashrc.tar.gz
-    _unpack "hermes"    hermes.tar.gz
-    _unpack "claude"    claude.tar.gz
-    _unpack "claude-mem" claude-mem.tar.gz
-    _unpack "bin"       bin.tar.gz
-    _unpack "ClawTeam"  clawteam.tar.gz
+    _unpack_ext() {
+        local label="$1" file="$2" dest="$3"
+        echo -ne "  還原 ${label}... "
+        if [ -f "$SELECTED_BACKUP/$file" ]; then
+            mkdir -p "$dest"
+            tar xzf "$SELECTED_BACKUP/$file" -C "$dest" 2>/dev/null
+            ok "完成"
+        else
+            warn "找不到 $file，跳過"
+            ((ERRORS++))
+        fi
+    }
+
+    _unpack     "bashrc"      bashrc.tar.gz
+    _unpack     "hermes"      hermes.tar.gz
+    _unpack     "claude"      claude.tar.gz
+    _unpack     "claude-mem"  claude-mem.tar.gz
+    _unpack     "bin"         bin.tar.gz
+    _unpack     "ClawTeam"    clawteam.tar.gz
+    _unpack_ext "termux-sop"  termux-sop.tar.gz  /sdcard/Download
 
     divider
     [ "$ERRORS" -gt 0 ] && warn "有 $ERRORS 個項目跳過" || ok "還原完成"
@@ -294,6 +322,14 @@ do_fresh_install() {
             err "Bun 安裝失敗，請手動安裝"
         fi
     fi
+    # 建立 Termux 側 wrapper（讓 bun 指令在 Termux 環境可直接使用）
+    mkdir -p "$TERMUX_HOME/.bun/bin"
+    cat > "$TERMUX_HOME/.bun/bin/bun" << 'BUNEOF'
+#!/data/data/com.termux/files/usr/bin/bash
+exec proot-distro login ubuntu -- /root/.bun/bin/bun "$@"
+BUNEOF
+    chmod +x "$TERMUX_HOME/.bun/bin/bun"
+    ok "Bun wrapper 建立完成 ($TERMUX_HOME/.bun/bin/bun)"
 
     # Step 7: claude-mem symlink
     _step "建立 claude-mem symlink（proot → Termux home）"
@@ -398,7 +434,7 @@ main_menu() {
         echo -e "${NC}"
 
         echo -e "  ${BOLD}── 備份（舊機執行）──────────────────${NC}"
-        echo -e "  ${GREEN}1${NC}. 完整備份（.bashrc .hermes .claude claude-mem ClawTeam bin）"
+        echo -e "  ${GREEN}1${NC}. 完整備份（.bashrc .hermes .claude claude-mem ClawTeam bin termux-sop）"
         echo ""
         echo -e "  ${BOLD}── 新機換機（依序執行）──────────────${NC}"
         echo -e "  ${CYAN}2${NC}. 【第一步】新機安裝設定精靈（裝軟體/環境，先跑這個）"
