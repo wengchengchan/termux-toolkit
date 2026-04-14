@@ -15,10 +15,16 @@ err()  { echo -e "${RED}[❌]${NC} $1"; }
 
 echo -e "\n${BOLD}Termux Toolkit 安裝程式${NC}\n"
 
-# 建立 bin 目錄
+# ── 確保 curl 已安裝 ─────────────────────────────────────────
+if ! command -v curl >/dev/null 2>&1; then
+    info "安裝 curl..."
+    pkg install curl -y 2>&1 | tail -3
+fi
+
+# ── 確保 ~/bin 目錄存在 ──────────────────────────────────────
 mkdir -p "$BIN_DIR"
 
-# 下載 tm-backup
+# ── 下載 tm-backup ───────────────────────────────────────────
 info "下載 tm-backup..."
 curl -fsSL "$REPO/tm-backup" -o "$BIN_DIR/tm-backup"
 if [ $? -eq 0 ]; then
@@ -29,16 +35,15 @@ else
     exit 1
 fi
 
-# 確認 ~/bin 在 PATH
-if ! echo "$PATH" | grep -q "$BIN_DIR"; then
+# ── 確認 ~/bin 在 PATH ───────────────────────────────────────
+if ! grep -q 'PATH.*home/bin\|home/bin.*PATH' "$HOME/.bashrc" 2>/dev/null; then
     info "將 ~/bin 加入 PATH..."
-    grep -q 'export PATH.*home/bin' "$HOME/.bashrc" 2>/dev/null || \
-        echo 'export PATH=/data/data/com.termux/files/home/bin:$PATH' >> "$HOME/.bashrc"
+    echo 'export PATH=/data/data/com.termux/files/home/bin:$PATH' >> "$HOME/.bashrc"
 fi
 
+# ── 完成 ─────────────────────────────────────────────────────
 echo ""
 ok "安裝完成！"
 echo ""
-echo -e "  執行方式：${BOLD}tm-backup${NC}"
-echo -e "  或重新載入：${BOLD}source ~/.bashrc && tm-backup${NC}"
+echo -e "  立即執行：${BOLD}source ~/.bashrc && tm-backup${NC}"
 echo ""
