@@ -15,6 +15,10 @@ err()  { echo -e "${RED}[❌]${NC} $1"; }
 
 echo -e "\n${BOLD}Termux Toolkit 安裝程式${NC}\n"
 
+# ── 修復套件依賴問題（新機常見） ─────────────────────────────
+info "檢查套件依賴..."
+apt --fix-broken install -y 2>&1 | grep -E "newly installed|already|Error" | head -3
+
 # ── 確保 curl 已安裝 ─────────────────────────────────────────
 if ! command -v curl >/dev/null 2>&1; then
     info "安裝 curl..."
