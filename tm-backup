@@ -398,16 +398,15 @@ main_menu() {
         echo -e "${NC}"
 
         echo -e "  ${BOLD}── 備份（舊機執行）──────────────────${NC}"
-        echo -e "  ${GREEN}1${NC}. 快速備份（必備項目：.bashrc .hermes .claude claude-mem）"
-        echo -e "  ${GREEN}2${NC}. 完整備份（同上 + ClawTeam、bin）"
+        echo -e "  ${GREEN}1${NC}. 完整備份（.bashrc .hermes .claude claude-mem ClawTeam bin）"
         echo ""
         echo -e "  ${BOLD}── 新機換機（依序執行）──────────────${NC}"
-        echo -e "  ${CYAN}4${NC}. 【第一步】新機安裝設定精靈（裝軟體/環境，先跑這個）"
+        echo -e "  ${CYAN}2${NC}. 【第一步】新機安裝設定精靈（裝軟體/環境，先跑這個）"
         echo -e "  ${CYAN}3${NC}. 【第二步】從備份還原設定檔（蓋回舊設定，精靈跑完後選）"
         echo ""
         echo -e "  ${BOLD}── 管理 ──────────────────────────────${NC}"
-        echo -e "  ${YELLOW}5${NC}. 查看系統狀態"
-        echo -e "  ${YELLOW}6${NC}. 刪除舊備份"
+        echo -e "  ${YELLOW}4${NC}. 查看系統狀態"
+        echo -e "  ${YELLOW}5${NC}. 刪除舊備份"
         echo ""
         echo -e "  ${RED}0${NC}. 離開"
         echo ""
@@ -421,17 +420,16 @@ main_menu() {
         fi
         echo ""
 
-        read -r -p "$(echo -e "${BOLD}選擇 [0-6]: ${NC}")" CHOICE
+        read -r -p "$(echo -e "${BOLD}選擇 [0-5]: ${NC}")" CHOICE
 
         case "$CHOICE" in
-            1) do_backup quick ;;
-            2) do_backup full ;;
+            1) do_backup full ;;
+            2) do_fresh_install ;;
             3) do_restore ;;
-            4) do_fresh_install ;;
-            5) check_status ;;
-            6) do_delete_backup ;;
+            4) check_status ;;
+            5) do_delete_backup ;;
             0) echo -e "\n${GREEN}掰掰！${NC}\n"; exit 0 ;;
-            *) warn "無效選項，請輸入 0–6"; sleep 1 ;;
+            *) warn "無效選項，請輸入 0–5"; sleep 1 ;;
         esac
     done
 }
